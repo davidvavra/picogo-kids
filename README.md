@@ -1,5 +1,7 @@
 # PicoGo
 
+Based on https://www.waveshare.com/wiki/PicoGo#Demos
+
 ## Setup
 
-Download and unzip "Demo V2 for PicoGo" from https://www.waveshare.com/wiki/PicoGo#Demos into this folder.
+Download and install Thonny. Connect device and copy main.py and included files to the device.
