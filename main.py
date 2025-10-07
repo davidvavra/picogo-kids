@@ -1,4 +1,4 @@
-from machine import Pin
+from machine import Pin, PWM
 from Motor import PicoGo
 from ws2812 import NeoPixel
 import utime
@@ -7,6 +7,7 @@ from ST7789 import ST7789
 IR = Pin(5, Pin.IN)
 M = PicoGo()
 speed = 50
+buzzer = PWM(Pin(4))
 
 def getkey():
     global IR
@@ -51,6 +52,8 @@ def getkey():
     
 n = 0
 Repeat="repeat"
+
+# keys
 ChanelMinus = 69
 Chanel= 70
 ChanelPlus=71
@@ -72,6 +75,41 @@ Key6=90
 Key7=66
 Key8=82
 Key9=74
+
+# music notes
+C4 = 262
+Cs4 = 277
+D4 = 294
+Ds4 = 311
+E4 = 330
+F4 = 349
+Fs4 = 370
+G4 = 392
+Gs4 = 415
+A4 = 440
+As4 = 466
+B4 = 494
+C5 = 523
+Cs5 = 554
+D5 = 587
+Ds5 = 622
+E5 = 659
+F5 = 698
+Fs5 = 740
+G5 = 784
+Gs5 = 831
+A5 = 880
+As5 = 932
+B5 = 988
+C6 = 1047
+D6 = 1175
+E6 = 1319
+F6 = 1397
+G6 = 1568
+A6 = 1760
+B6 = 1976
+REST = 0
+VOLUME = 20000  # 0..65535
 
 # empty memory = black
 # recording = blue
@@ -113,7 +151,7 @@ class MovementRecors(object):
     
     def updateColor(self, action):
         if action in ['start', 'stop', 'nop']:
-            self.LED.pixels_fill(self.LED.BLUE if self.record else self.LED.WHITE)
+            self.LED.pixels_fill(self.LED.YELLOW if self.record else self.LED.WHITE)
         if action == 'repeat':
             self.LED.pixels_fill(self.LED.GREEN)
         if action == 'reverse':
@@ -122,6 +160,10 @@ class MovementRecors(object):
             self.LED.pixels_fill((75, 255, 75))
         if action == 'reverseStep':
             self.LED.pixels_fill((255, 50, 50))
+        if action == 'blue':
+            self.LED.pixels_fill(self.LED.BLUE)  
+        if action == 'red':
+            self.LED.pixels_fill(self.LED.RED)     
         self.LED.pixels_show()
     
     def clear(self):
@@ -157,11 +199,19 @@ class MovementRecors(object):
         if move[0] == Key2:
             motor.forward(speed)
         if move[0] == Key4:
-            motor.left(speed)
+            motor.left(20)
         if move[0] == Key6:
-            motor.right(speed)
-        if move[0] == Key5:
+            motor.right(20)
+        if move[0] == Key8:
             motor.backward(speed)
+        if move[0] == Key1:
+            self.sing()
+        if move[0] == Key3:
+            self.happyBeep()
+        if move[0] == Key7:
+            self.updateColor('blue')
+        if move[0] == Key9:
+            self.updateColor('red')        
         utime.sleep_us(move[1])
         motor.stop()
         utime.sleep_us(10000)
@@ -181,7 +231,7 @@ class MovementRecors(object):
             motor.right(speed)
         if move[0] == Key6:
             motor.left(speed)
-        if move[0] == Key5:
+        if move[0] == Key8:
             motor.forward(speed)
         utime.sleep_us(move[1])
         motor.stop()
@@ -206,6 +256,43 @@ class MovementRecors(object):
             self.reverseStep(motor, speed)
         utime.sleep_ms(250)        
         self.updateColor('nop')
+    
+    def start_tone(self, freq):
+        if freq == REST:
+            buzzer.duty_u16(0)
+        else:
+            buzzer.freq(freq)
+            buzzer.duty_u16(VOLUME)
+
+    def stop_tone(self):
+        buzzer.duty_u16(0)
+
+    def tone(self, freq, dur_ms):
+        self.start_tone(freq)
+        utime.sleep_ms(dur_ms)
+        self.stop_tone()
+    
+    def play_song(self, song):
+        for freq, dur in song:
+            self.tone(freq, dur)
+        self.stop_tone()
+    
+    def sing(self):
+        self.play_song([(C5, 100), (REST, 200), (E5, 100), (REST, 200), (G5, 100)])
+    
+    def happyBeep(self):
+        self.play_song(
+            [
+            (C5, 100),
+            (REST, 50),
+            (G5, 100),
+            (C5, 100),
+            (REST, 50),
+            (G5, 100),
+            (REST, 50),
+            (C6, 100),
+            ]
+        )    
 
 
 def red_to_green_st7789(progress):
@@ -258,8 +345,7 @@ if __name__ == '__main__':
         
         if(key != None):
             print(key)
-            print(key)
-            if key != MR.lastKey and key in [Key2, Key4, Key5, Key6]:
+            if key != MR.lastKey and key in [Key1, Key2, Key3, Key4, Key6, Key7, Key8, Key9]:
                 print(f"{key=}, {MR.lastKey=}")
                 MR.changeLast(key)
                 print(MR.recordedMoves)
@@ -268,15 +354,15 @@ if __name__ == '__main__':
                 M.forward(speed)
                 print("forward")
             if key == Key4:
-                M.left(speed)
+                M.left(20)
                 print("left")
-            if key == 0x1c:
+            if key == Key5:
                 M.stop()
                 print("stop")
             if key == Key6:
-                M.right(speed)
+                M.right(20)
                 print("right")
-            if key == Key5:
+            if key == Key8:
                 M.backward(speed)
                 print("backward")
             if key == Play:
@@ -299,11 +385,6 @@ if __name__ == '__main__':
                 MR.repeatStep(M, speed)
                 utime.sleep_ms(250)
                 MR.updateColor('nop')
-            if key == Next:
-                MR.updateColor('repeatStep')
-                MR.repeatStep(M, speed)
-                utime.sleep_ms(250)
-                MR.updateColor('nop')
             if key == Minus:
                 speed = max(0, speed - 10)
                 displaySpeed(speed)
@@ -315,12 +396,14 @@ if __name__ == '__main__':
             if key == Eq:
                 speed = 50
                 displaySpeed(speed)
+            if key == Key1:
+                MR.sing()
+            if key == Key3:
+                MR.happyBeep()
+            if key == Key7:
+                MR.updateColor('blue')
             if key == Key9:
-                lcd = ST7789()
-                lcd.fill_rect(0,0,int(speed*240/100),300,magic)
-                magic = magic <<1
-                print(hex(magic), magic)
-                lcd.show()
+                MR.updateColor('red')
             
             
         else:
