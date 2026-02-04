@@ -187,7 +187,6 @@ def singHappy():
 
 def runStep(key, forward):
     if key == KEY_2 and forward:
-        print("forward", speed)
         motor.forward(speed)
     if key == KEY_2 and not forward:
         motor.backward(speed)
@@ -224,29 +223,31 @@ def runStep(key, forward):
     if key == KEY_CH_PLUS:
         singUp()       
     if key == KEY_CH:
-        singHappy()
-    utime.sleep_us(speed)
-    motor.stop()
-    utime.sleep_us(10000)    
+        singHappy()  
         
 def repeat():
     global recordedSteps
     for step in recordedSteps:
-        runStep(step, true)
+        runStep(step, True)
+        utime.sleep(1)
     
 def nextStep():
     global stepIndex
+    global recordedSteps
     stepIndex += 1
-    if (stepIndex >= stepIndex.size):
+    if (stepIndex >= len(recordedSteps)):
         stepIndex = 0
     runStep(recordedSteps[stepIndex], True)
+    utime.sleep(1)
     
 def previousStep():
     global stepIndex
+    global recordedSteps
     stepIndex -= 1
     if (stepIndex < 0):
         stepIndex = 0
     runStep(recordedSteps[stepIndex], False)
+    utime.sleep(1)
 
 def clear():
     global recordedSteps
@@ -256,9 +257,9 @@ if __name__ == '__main__':
     updateColor(LED.WHITE)
     while True:
         key = getKey()
-        
         if (key != None):
-            print("key=", key)
+            print("key", key)
+            n = 0
             if key in [KEY_1, KEY_2, KEY_3, KEY_4, KEY_5, KEY_6, KEY_7, KEY_8, KEY_9, KEY_0, KEY_100, KEY_200, KEY_CH, KEY_CH_MINUS, KEY_CH_PLUS]:
                 runStep(key, True)
                 recordedSteps.append(key)
@@ -275,7 +276,7 @@ if __name__ == '__main__':
                 speed = min(100, speed + 10)
                 displaySpeed()
             if key == KEY_EQ:
-                clear() 
+                clear()
         else:
             utime.sleep_us(10)
             n += 1
