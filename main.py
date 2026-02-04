@@ -15,30 +15,31 @@ buzzer = PWM(Pin(4))
 speed = 50
 recordedSteps: list[int] = []
 stepIndex = -1
-color = LED.White
+color = LED.WHITE
+n = 0
 
 # keys
-ChanelMinus = 69
-Chanel= 70
-ChanelPlus=71
-Prev=68
-Next=64
-Play=67
-Minus=7
-Plus=21
-Eq=9
-Key0=22
-Key100=25
-Key200=13
-Key1=12
-Key2=24
-Key3=94
-Key4=8
-Key5=28
-Key6=90
-Key7=66
-Key8=82
-Key9=74
+KEY_CH_MINUS= 69
+KEY_CH= 70
+KEY_CH_PLUS=71
+KEY_PREV=68
+KEY_NEXT=64
+KEY_PLAY=67
+KEY_MINUS=7
+KEY_PLUS=21
+KEY_EQ=9
+KEY_0=22
+KEY_100=25
+KEY_200=13
+KEY_1=12
+KEY_2=24
+KEY_3=94
+KEY_4=8
+KEY_5=28
+KEY_6=90
+KEY_7=66
+KEY_8=82
+KEY_9=74
 
 # music notes
 C4 = 262
@@ -115,13 +116,31 @@ def getKey():
             return data[2]
         else:
             return("repeat")
+        
+def rgb_to_bgr565(rgb):
+    r, g, b = (rgb)
+    # 1. Standard RGB565 packing
+    # Red: 5 bits, Green: 6 bits, Blue: 5 bits
+    r5 = (r >> 3) & 0x1F
+    g6 = (g >> 2) & 0x3F
+    b5 = (b >> 3) & 0x1F
     
+    # Pack into a 16-bit integer
+    color = (r5 << 11) | (g6 << 5) | b5
+    
+    # 2. Swap the bytes (Little-Endian)
+    # This is why Green becomes 0x1F00 or 0x001F in your library
+    return ((color & 0xFF) << 8) | (color >> 8)
+
 def displaySpeed():
-    LCD.fill_rect(0,0,int(speed*240/100),300,color)
+    rgb = rgb_to_bgr565(color)
+    LCD.fill(0)
+    LCD.fill_rect(0,0,int(speed*240/100),300,rgb)
     LCD.show()
         
-def updateColor(color):
-    color = color
+def updateColor(newColor):
+    global color
+    color = newColor
     LED.pixels_fill(color)
     LED.pixels_show()
     displaySpeed()
@@ -150,9 +169,9 @@ def singUp():
     play_song([(C5, 100), (REST, 200), (E5, 100), (REST, 200), (G5, 100)])
         
 def singDown():
-    play_song([(C5, 100), (REST, 200), (E5, 100), (REST, 200), (G5, 100)])    
+    play_song([(G5, 100), (REST, 200), (E5, 100), (REST, 200), (C5, 100)])    
     
-def singHappy(self):
+def singHappy():
     play_song(
             [
             (C5, 100),
@@ -167,87 +186,99 @@ def singHappy(self):
         )     
 
 def runStep(key, forward):
-    if key == Key2 and forward:
+    if key == KEY_2 and forward:
+        print("forward", speed)
         motor.forward(speed)
-    if key == Key2 and not forward:
+    if key == KEY_2 and not forward:
         motor.backward(speed)
-    if key == Key8 and forward:
+    if key == KEY_8 and forward:
         motor.backward(speed)
-    if key == Key8 and not forward:
+    if key == KEY_8 and not forward:
         motor.forward(speed)        
-    if key == Key4 and forward:
+    if key == KEY_4 and forward:
         motor.left(20)
-    if key == Key4 and not forward:
+    if key == KEY_4 and not forward:
         motor.right(20)
-    if key == Key6 and forward:
+    if key == KEY_6 and forward:
         motor.right(20)
-    if key == Key6 and not forward:
+    if key == KEY_6 and not forward:
         motor.left(20)
-    if key == Key0:
+    if key == KEY_0:
         updateColor(LED.RED)
-    if key == Key100:
+    if key == KEY_100:
         updateColor(LED.GREEN)
-    if key == Key200:
+    if key == KEY_200:
         updateColor(LED.BLUE)
-    if key == Key1:
+    if key == KEY_1:
         updateColor(LED.YELLOW)
-    if key == Key3:
+    if key == KEY_3:
         updateColor(LED.CYAN)
-    if key == Key5:
+    if key == KEY_5:
         updateColor(LED.WHITE)
-    if key == Key7:
+    if key == KEY_7:
         updateColor(LED.PURPLE)
-    if key == Key9:
+    if key == KEY_9:
         updateColor(LED.BLACK)
-    if key == ChannelMinus:
+    if key == KEY_CH_MINUS:
         singDown()
-    if key == ChannelPlus:
+    if key == KEY_CH_PLUS:
         singUp()       
-    if key == Channel:
+    if key == KEY_CH:
         singHappy()
     utime.sleep_us(speed)
     motor.stop()
     utime.sleep_us(10000)    
         
 def repeat():
+    global recordedSteps
     for step in recordedSteps:
         runStep(step, true)
     
 def nextStep():
+    global stepIndex
     stepIndex += 1
     if (stepIndex >= stepIndex.size):
         stepIndex = 0
-    runStep(recordedSteps[stepIndex], true)
+    runStep(recordedSteps[stepIndex], True)
     
 def previousStep():
+    global stepIndex
     stepIndex -= 1
     if (stepIndex < 0):
         stepIndex = 0
-    runStep(recordedSteps[stepIndex], false)
+    runStep(recordedSteps[stepIndex], False)
 
 def clear():
+    global recordedSteps
     recordedSteps = []
 
 if __name__ == '__main__':
-    updateColor(Color.White)
+    updateColor(LED.WHITE)
     while True:
-        key = getkey()
+        key = getKey()
         
         if (key != None):
-            if key in [Key1, Key2, Key3, Key4, Key6, Key7, Key8, Key9, Key0, Key100, Key200, ChannelMinus, ChannelPlus, Channel]:
-                runStep(key, true)
-                recordedSteps += key
-            if key == Prev:
+            print("key=", key)
+            if key in [KEY_1, KEY_2, KEY_3, KEY_4, KEY_5, KEY_6, KEY_7, KEY_8, KEY_9, KEY_0, KEY_100, KEY_200, KEY_CH, KEY_CH_MINUS, KEY_CH_PLUS]:
+                runStep(key, True)
+                recordedSteps.append(key)
+            if key == KEY_PREV:
                 previousStep()
-            if key == Next:
+            if key == KEY_NEXT:
                 nextStep()
-            if key == Play:
+            if key == KEY_PLAY:
                 repeat()
-            if key == Minus:
+            if key == KEY_MINUS:
                 speed = max(0, speed - 10)
                 displaySpeed()
-            if key == Plus:
+            if key == KEY_PLUS:
                 speed = min(100, speed + 10)
                 displaySpeed()
-            if key == Eq:
-                clear()
+            if key == KEY_EQ:
+                clear() 
+        else:
+            utime.sleep_us(10)
+            n += 1
+            if n > 800:
+                n = 0
+                motor.stop()       
