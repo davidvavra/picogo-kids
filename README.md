@@ -10,12 +10,21 @@ The goal is to build a toy which teaches programming concepts to kids for the fi
 8: go back
 -: decrease speed
 +: increase speed
-1: play simple song
-3: play happy song
-7: change LED color to blue
-9: change LED color to red
-Play: repeat steps what the kid just "programmed"
-CH+: clear recorded steps
+CH-: play decreasing song
+CH+: play increasing song
+CH: play happy song
+0: change LED&LCD color to red
+100: change LED&LCD color to green
+200: change LED&LCD color to blue
+1: change LED&LCD color to yellow
+3: change LED&LCD color to cyan
+5: change LED&LCD color to white
+7: change LED&LCD color to purple
+9: change LED&LCD color to black (turns off lights)
+Prev: run previous step from memory
+Next: run next step from memory
+Play: run all the steps from memory
+EQ: clear the memory
 ```
 
 ## Setup
